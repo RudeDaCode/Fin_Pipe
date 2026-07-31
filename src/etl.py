@@ -4,8 +4,12 @@ from pyspark.sql.functions import (
     col,
     hour,
     dayofweek,
-    date_format
+    date_format,
+    create_map,
+    lit,
+    round
 )
+from itertools import chain
 spark = (
     SparkSession.builder
     .appName("Financial Pipeline")
@@ -18,6 +22,11 @@ df = spark.read.csv(
     #simplify for now
     inferSchema=True
 )
+EXCHANGE_RATES = {
+    "EUR": 1.00,
+    "USD": 0.86,
+    "INR": 0.010
+}
 '''
 df.printSchema()
 
@@ -61,8 +70,17 @@ df = df.withColumn(
     when(col("merchant").isNull(), "Unknown")
     .otherwise(col("merchant"))
 )
-
+rate_map = create_map(
+    *list(chain.from_iterable(
+        [(lit(k), lit(v)) for k, v in EXCHANGE_RATES.items()]
+    ))
+)
 #feature engineering
+df = df.withColumn(
+    "amount_eur",
+    round(col("amount") * rate_map[col("currency")], 2)
+)
+
 df = df.withColumn(
     "hour",
     hour(col("timestamp"))
@@ -80,7 +98,7 @@ df = df.withColumn(
 )
 df = df.withColumn(
     "high_value",
-    when(col("amount") > 2000, True)
+    when(col("amount_eur") > 500, True)
     .otherwise(False)
 )
 df = df.withColumn(
@@ -90,6 +108,7 @@ df = df.withColumn(
         True
     ).otherwise(False)
 )
+'''
 df.select(
     "timestamp",
     "hour",
@@ -99,8 +118,18 @@ df.select(
     "high_value",
     "country",
     "international"
+).show(10, truncate=False)'''
+df.select(
+    "timestamp",
+    "amount",
+    "currency",
+    "amount_eur",
+    "high_value",
+    "country"
 ).show(10, truncate=False)
 print("Final row count:", df.count())
+
+
 #create parquet
 df.write.mode("overwrite").parquet("data/processed/transactions")
 #verify parquet exists

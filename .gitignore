@@ -4,6 +4,11 @@ __pycache__/
 
 data/raw/
 data/processed/
-
+data/analytics/
 .vscode/
 .ipynb_checkpoints/
+
+src/analytics copy.py
+
+
+generate_data copy.py
