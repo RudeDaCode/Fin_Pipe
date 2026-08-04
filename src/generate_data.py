@@ -1,7 +1,11 @@
 from faker import Faker
 import pandas as pd
 import random
+from pathlib import Path
 
+Path("data/raw").mkdir(parents=True, exist_ok=True)
+Path("data/processed").mkdir(parents=True, exist_ok=True)
+Path("data/analytics").mkdir(parents=True, exist_ok=True)
 fake = Faker()
 MERCHANTS = [
     "Amazon",
